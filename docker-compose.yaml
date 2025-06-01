@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  matomo:
+    image: matomo:latest
+    restart: always
+    ports:
+      - "8080:80" # Exposes Matomo on host port 8080
+    volumes:
+      - ./matomo_data:/var/www/html # Mounts local ./matomo_data to Matomo's webroot
+      # You might also want to persist the config and plugins separately if preferred
+      # - ./config:/var/www/html/config
+      # - ./plugins:/var/www/html/plugins
+    environment:
+      MATOMO_DATABASE_HOST: db
+      MATOMO_DATABASE_ADAPTER: mysql
+      MATOMO_DATABASE_TABLES_PREFIX: matomo_
+      MATOMO_DATABASE_DBNAME: matomo
+      MATOMO_DATABASE_USERNAME: matomo_user
+      MATOMO_DATABASE_PASSWORD: your_strong_password # Change this!
+    depends_on:
+      - db
+    networks:
+      - matomo_network
+
+  db:
+    image: mariadb:latest
+    restart: always
+    ports:
+      - "3306:3306" # Exposes MariaDB on host port 3306
+    volumes:
+      - ./db_data:/var/lib/mysql # Mounts local ./db_data for persistent database storage
+    environment:
+      MYSQL_ROOT_PASSWORD: your_very_strong_root_password # Change this!
+      MYSQL_DATABASE: matomo
+      MYSQL_USER: matomo_user
+      MYSQL_PASSWORD: your_strong_password # Ensure this matches MATOMO_DATABASE_PASSWORD
+    networks:
+      - matomo_network
+
+volumes:
+  matomo_data: # Defines the named volume for Matomo if you don't use a bind mount like ./matomo_data
+  db_data:     # Defines the named volume for the database if you don't use a bind mount like ./db_data
+
+networks:
+  matomo_network:
+    driver: bridge
