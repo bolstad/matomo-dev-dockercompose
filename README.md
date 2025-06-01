@@ -1,26 +1,21 @@
 # Local Matomo Development Environment with Docker Compose
 
-This repository provides a `docker-compose.yml` configuration to quickly set up a local development environment for Matomo analytics. It features the latest Matomo and MariaDB images, a bind-mounted volume for live code editing of Matomo files directly from your host machine, and an exposed MariaDB port for direct database access.
+This repository provides a docker-compose.yml configuration to set up a local development environment for Matomo analytics quickly.
 
-This setup is suitable for:
+It features the latest Matomo and MariaDB images, a bind-mounted volume for live code editing of Matomo files directly from your host machine, and an exposed MariaDB port for direct database access.
+
+Suitable for:
+
 * Developing custom Matomo plugins or themes.
 * Testing Matomo configurations locally.
 
-## Features
 
-* **Matomo:** Latest official Docker image.
-* **Database:** Latest official MariaDB image.
-* **Writable Matomo Files:** The Matomo web root (`/var/www/html`) is mounted to a local `./matomo_data` directory, allowing you to edit files directly on your host with your preferred IDE or editor.
-* **Host Database Access:** MariaDB port `3306` is exposed to `localhost:3306` for easy connection with database management tools.
-* **Persistent Data:** Both Matomo files (if using the bind mount for `/var/www/html`) and database data (in `./db_data`) are persisted on your host machine.
-* **Easy to Start/Stop:** Uses Docker Compose for simple environment management.
+# Features
 
-## Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-* **Docker:** [Get Docker](https://docs.docker.com/get-docker/)
-* **Docker Compose:** Usually included with Docker Desktop. If not, [install Docker Compose](https://docs.docker.com/compose/install/).
+* Bleeding edge:  Uses latest official Matomo and MariaDB images as default (buy you can easily pin a specifc version, see 'Customization'. 
+* Writable matomo files: The Matomo web root (/var/www/html) is mounted to a local ./matomo_data directory, allowing you to edit files directly on your host with your preferred IDE or editor.
+* Accass DB from host: MariaDB port 3306 is exposed to localhost:3306 for easy connection with your standard database management tools.
+* Persistent data: Both Matomo files (if using the bind mount for /var/www/html) and database data (in ./db_data) are persisted on your host machine.
 
 ## Setup Instructions
 
@@ -93,6 +88,10 @@ Before you begin, ensure you have the following installed:
         * **Table Prefix:** `matomo_` (or your preference)
         * **Adapter:** `PDO\MYSQL`
     * Complete the rest of the installation steps (Super User creation, etc.).
+  
+   OR 
+
+   * Import a copy of your stage data base for bliss (see 'Connect to Datbase from Host')     
 
 4.  **Developing Matomo (Writable Filesystem):**
     * The `./matomo_data` directory on your host machine is directly mapped to `/var/www/html` inside the Matomo container.
@@ -130,7 +129,7 @@ Before you begin, ensure you have the following installed:
     ```bash
     docker-compose down -v
     ```
-    **Note:** Since we are using bind mounts (`./matomo_data` and `./db_data`), `docker-compose down -v` will remove the anonymous volumes but not the data in these host-bound directories. To delete that data, you would need to manually delete the `./matomo_data` and `./db_data` directories from your host.
+    **Note:** Since we are using bind mounts (`./matomo_data` and `./db_data`), `docker-compose down -v` will remove the anonymous volumes but not the data in these host-bound directories. To delete that data, you need to manually delete the `./matomo_data` and `./db_data` directories from your host.
 
 ## Customization
 
@@ -160,8 +159,8 @@ Before you begin, ensure you have the following installed:
     * A better approach on Linux is often to ensure your host user's UID matches the `www-data` UID inside the container or to set the ownership of the host directory appropriately, e.g., `sudo chown -R 33:33 ./matomo_data` (if `www-data` is UID/GID 33). Check the Matomo Docker image documentation for specifics on the user.
 
 * **Port Conflicts:**
-    If you get an error about a port already being in use when running `docker-compose up`, it means another application on your host is using port `8080` or `3306`. You can either stop the other application or change the host-side port mapping in your `docker-compose.yml` as described in the "Customization" section.
+    If you get an error about a port already being in use when running `docker-compose up`, it means another application on your host is using port `8080` or `3306`. You can either stop the other application or change the host-side port mapping in your `docker-compose.yml` as described in the 'Customization' section.
 
 ---
 
-Happy developing!
+Happy hacking!
