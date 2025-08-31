@@ -277,7 +277,7 @@ The `make shell` command provides direct access to the Matomo container's filesy
 
 All notable changes to this project will be documented in this section.
 
-### [1.1.1] - 2024-08-31
+### [1.1.2] - 2024-08-31
 
 #### Fixed
 - Actually add .env.example. (Do not create releases after a long day of coding ...)
