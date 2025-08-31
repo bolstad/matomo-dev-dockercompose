@@ -277,6 +277,15 @@ The `make shell` command provides direct access to the Matomo container's filesy
 
 All notable changes to this project will be documented in this section.
 
+### [1.2.0] - 2024-08-31
+
+#### Added
+- Makefile with convenient commands for common Docker Compose operations
+- Documentation for all Makefile commands
+
+#### Changed
+- Updated documentation to use Makefile commands instead of direct docker-compose commands
+
 ### [1.1.2] - 2024-08-31
 
 #### Fixed
