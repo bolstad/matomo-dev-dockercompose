@@ -36,18 +36,10 @@ MATOMO_PORT=8081              # Web interface port (default: 8081 to avoid confl
 DB_PORT=3307                  # Database port (default: 3307 to avoid conflicts)
 
 # Database Configuration
-MYSQL_ROOT_PASSWORD=dev_root_password123
+MYSQL_ROOT_PASSWORD=changeme_root_password
 MYSQL_DATABASE=matomo
 MYSQL_USER=matomo_user
-MYSQL_PASSWORD=dev_matomo_password123
-
-# Matomo Configuration
-MATOMO_DATABASE_HOST=db
-MATOMO_DATABASE_ADAPTER=mysql
-MATOMO_DATABASE_TABLES_PREFIX=matomo_
-MATOMO_DATABASE_DBNAME=matomo
-MATOMO_DATABASE_USERNAME=matomo_user
-MATOMO_DATABASE_PASSWORD=dev_matomo_password123
+MYSQL_PASSWORD=changeme_user_password
 
 # Container Names
 MATOMO_CONTAINER_NAME=matomo-dev
@@ -59,6 +51,9 @@ NETWORK_NAME=matomo_dev_network
 # Volume Paths
 MATOMO_DATA_PATH=./matomo_data
 DB_DATA_PATH=./db_data
+
+# Optional: Matomo table prefix (defaults to 'matomo_' if not set)
+# MATOMO_TABLES_PREFIX=matomo_
 ```
 
 ### Avoiding Port Conflicts
@@ -79,7 +74,7 @@ If you're running multiple Matomo instances or other services, you can easily ch
     Copy `.env.example` to `.env` and update according to your needs:
     * **IMPORTANT: Change the default passwords** for security:
         * `MYSQL_ROOT_PASSWORD`
-        * `MYSQL_PASSWORD` and `MATOMO_DATABASE_PASSWORD` (must match)
+        * `MYSQL_PASSWORD`
     * Adjust ports if needed to avoid conflicts:
         * `MATOMO_PORT` (default: 8081)
         * `DB_PORT` (default: 3307)
@@ -165,7 +160,7 @@ The `make shell` command provides direct access to the Matomo container's filesy
     * When prompted for **Database Setup**, use the following details:
         * **Database Server:** `db` (this is the service name defined in `docker-compose.yml`)
         * **Login:** `matomo_user` (as configured in `.env`)
-        * **Password:** The password you set in `.env` for `MATOMO_DATABASE_PASSWORD` and `MYSQL_PASSWORD`.
+        * **Password:** The password you set in `.env` for `MYSQL_PASSWORD`.
         * **Database Name:** `matomo` (as configured in `.env`)
         * **Table Prefix:** `matomo_` (or your preference)
         * **Adapter:** `PDO\MYSQL`
@@ -226,7 +221,6 @@ The `make shell` command provides direct access to the Matomo container's filesy
     ```bash
     MYSQL_ROOT_PASSWORD=your_secure_password
     MYSQL_PASSWORD=your_secure_password
-    MATOMO_DATABASE_PASSWORD=your_secure_password  # Must match MYSQL_PASSWORD
     ```
 
 * **Container Names:** Customize container names in `.env`:
@@ -277,7 +271,32 @@ The `make shell` command provides direct access to the Matomo container's filesy
 
 All notable changes to this project will be documented in this section.
 
-### [1.2.0] - 2024-08-31
+
+### [2.0.0] - 2025-08-31
+
+#### Breaking Changes
+- Simplified environment variables - removed duplicate Matomo-specific variables. 
+  Really should have done it like this since day one. 
+  The following variables have been removed from `.env`:
+  - `MATOMO_DATABASE_HOST` (hardcoded to 'db')
+  - `MATOMO_DATABASE_ADAPTER` (hardcoded to 'mysql')
+  - `MATOMO_DATABASE_DBNAME` (uses `MYSQL_DATABASE`)
+  - `MATOMO_DATABASE_USERNAME` (uses `MYSQL_USER`)
+  - `MATOMO_DATABASE_PASSWORD` (uses `MYSQL_PASSWORD`)
+  - `MATOMO_DATABASE_TABLES_PREFIX` (now optional, defaults to 'matomo_')
+
+#### Changed
+- Docker Compose configuration now reuses MariaDB variables for Matomo configuration
+- Eliminated variable duplication between database and application configuration
+
+#### Migration Guide
+If upgrading from 1.x:
+1. Update your `.env` file using the new `.env.example` as template
+2. Remove the old Matomo-specific database variables
+3. Keep only the `MYSQL_*` variables for database configuration
+
+
+### [1.2.0] - 2024-08-31 
 
 #### Added
 - Makefile with convenient commands for common Docker Compose operations
