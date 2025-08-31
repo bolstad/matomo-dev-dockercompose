@@ -18,7 +18,7 @@ Suitable for:
 * **Writable matomo files:** The Matomo web root (/var/www/html) is mounted to a local ./matomo_data directory, allowing you to edit files directly on your host with your preferred IDE or editor.
 * **Access DB from host:** MariaDB port is exposed for easy connection with your standard database management tools.
 * **Persistent data:** Both Matomo files (if using the bind mount for /var/www/html) and database data (in ./db_data) are persisted on your host machine.
-* **Configuration via .env file:** All settings (ports, passwords, container names) are externalized to a `.env` file for easy customization without modifying docker-compose.yml. This make it easy to run several developmenet instances in parallel without port conflicts. 
+* **Configuration via .env file:** All settings (ports, passwords, container names) are externalized to a `.env` file for easy customization without modifying docker-compose.yml. This makes it easy to run several development instances in parallel without port conflicts. 
 * **No conflicts:** Default configuration uses non-standard ports (8081 for web, 3307 for database) to avoid conflicts with other local services.
 
 ## Environment Configuration (.env file)
@@ -27,7 +27,7 @@ This setup uses a `.env` file to manage all configuration settings. This allows 
 
 ### Default .env Configuration
 
-The repository includes a `.env` file with the following configurable values:
+The repository includes a `.env.example` file with the following configurable values (copy to `.env` for use):
 
 ```bash
 # Port Configuration
@@ -74,8 +74,8 @@ If you're running multiple Matomo instances or other services, you can easily ch
     cd matomo-dev-dockercompose
     ```
 
-2.  **Review and Update the .env file:**
-    Copy `.env-dist` to .env  `.env` and update according to your wishes:
+2.  **Create and Update the .env file:**
+    Copy `.env.example` to `.env` and update according to your needs:
     * **IMPORTANT: Change the default passwords** for security:
         * `MYSQL_ROOT_PASSWORD`
         * `MYSQL_PASSWORD` and `MATOMO_DATABASE_PASSWORD` (must match)
@@ -84,16 +84,12 @@ If you're running multiple Matomo instances or other services, you can easily ch
         * `DB_PORT` (default: 3307)
     * Optionally customize container names and paths
 
-3.  **Create Local Data Directories:**
-    In the same directory as your `docker-compose.yml` file, create the directories that will be used for persistent storage:
-    ```bash
-    mkdir matomo_data
-    mkdir db_data
-    ```
+3.  **Data Directories:**
+    The data directories (`matomo_data` and `db_data`) will be created automatically when you first run `docker-compose up`.
     * `./matomo_data`: Will store Matomo's application files.
     * `./db_data`: Will store MariaDB's data.
 
-    *Note on Permissions:* If you are on Linux, Docker might create these directories as `root` if they don't exist when you first run `docker-compose up`. You may need to adjust their ownership and permissions afterwards to allow your host user to write to `./matomo_data` (e.g., `sudo chown -R $(whoami):$(whoami) matomo_data db_data`).
+    *Note on Permissions:* If you are on Linux, Docker might create these directories as `root`. You may need to adjust their ownership and permissions afterwards to allow your host user to write to `./matomo_data` (e.g., `sudo chown -R $(whoami):$(whoami) matomo_data db_data`).
 
 ## Usage
 
@@ -224,6 +220,16 @@ If you're running multiple Matomo instances or other services, you can easily ch
 ## Changelog
 
 All notable changes to this project will be documented in this section.
+
+### [1.1.1] - 2024-08-31
+
+#### Fixed
+- Post-commit clarity: renamed `.env-example` to `.env.example`, fixed typos
+- Removed unnecessary named volume definitions from docker-compose.yml that conflicted with bind mounts
+- Updated directory creation instructions to reflect automatic creation
+
+#### Changed
+- Simplified data directory setup - directories are now created automatically by Docker
 
 ### [1.1.0] - 2024-08-31
 

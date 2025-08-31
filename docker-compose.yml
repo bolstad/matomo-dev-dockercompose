@@ -35,10 +35,6 @@ services:
     networks:
       - matomo_network
 
-volumes:
-  matomo_data:
-  db_data:
-
 networks:
   matomo_network:
     name: ${NETWORK_NAME}
