@@ -1,6 +1,8 @@
 # Local Matomo Development Environment with Docker Compose
 
-This repository provides a docker-compose.yml configuration to set up a local development environment for Matomo analytics quickly.
+**Author:** Christian Bolstad (christian@carnaby.se)
+
+This repository provides a docker-compose.yml configuration to set up a local development environment for Matomo analytics quickly.
 
 It features the latest Matomo and MariaDB images, a bind-mounted volume for live code editing of Matomo files directly from your host machine, and an exposed MariaDB port for direct database access.
 
@@ -8,26 +10,81 @@ Suitable for:
 
 * Developing custom Matomo plugins or themes.
 * Testing Matomo configurations locally.
-
+* Running multiple Matomo instances without conflicts.
 
 # Features
 
-* Bleeding edge:  Uses latest official Matomo and MariaDB images as default (buy you can easily pin a specifc version, see 'Customization'. 
-* Writable matomo files: The Matomo web root (/var/www/html) is mounted to a local ./matomo_data directory, allowing you to edit files directly on your host with your preferred IDE or editor.
-* Accass DB from host: MariaDB port 3306 is exposed to localhost:3306 for easy connection with your standard database management tools.
-* Persistent data: Both Matomo files (if using the bind mount for /var/www/html) and database data (in ./db_data) are persisted on your host machine.
+* **Bleeding edge:** Uses latest official Matomo and MariaDB images as default (but you can easily pin a specific version, see 'Customization').
+* **Writable matomo files:** The Matomo web root (/var/www/html) is mounted to a local ./matomo_data directory, allowing you to edit files directly on your host with your preferred IDE or editor.
+* **Access DB from host:** MariaDB port is exposed for easy connection with your standard database management tools.
+* **Persistent data:** Both Matomo files (if using the bind mount for /var/www/html) and database data (in ./db_data) are persisted on your host machine.
+* **Configuration via .env file:** All settings (ports, passwords, container names) are externalized to a `.env` file for easy customization without modifying docker-compose.yml. This make it easy to run several developmenet instances in parallel without port conflicts. 
+* **No conflicts:** Default configuration uses non-standard ports (8081 for web, 3307 for database) to avoid conflicts with other local services.
+
+## Environment Configuration (.env file)
+
+This setup uses a `.env` file to manage all configuration settings. This allows you to easily customize ports, passwords, and other settings without modifying the `docker-compose.yml` file.
+
+### Default .env Configuration
+
+The repository includes a `.env` file with the following configurable values:
+
+```bash
+# Port Configuration
+MATOMO_PORT=8081              # Web interface port (default: 8081 to avoid conflicts)
+DB_PORT=3307                  # Database port (default: 3307 to avoid conflicts)
+
+# Database Configuration
+MYSQL_ROOT_PASSWORD=dev_root_password123
+MYSQL_DATABASE=matomo
+MYSQL_USER=matomo_user
+MYSQL_PASSWORD=dev_matomo_password123
+
+# Matomo Configuration
+MATOMO_DATABASE_HOST=db
+MATOMO_DATABASE_ADAPTER=mysql
+MATOMO_DATABASE_TABLES_PREFIX=matomo_
+MATOMO_DATABASE_DBNAME=matomo
+MATOMO_DATABASE_USERNAME=matomo_user
+MATOMO_DATABASE_PASSWORD=dev_matomo_password123
+
+# Container Names
+MATOMO_CONTAINER_NAME=matomo-dev
+DB_CONTAINER_NAME=matomo-dev-db
+
+# Network Configuration
+NETWORK_NAME=matomo_dev_network
+
+# Volume Paths
+MATOMO_DATA_PATH=./matomo_data
+DB_DATA_PATH=./db_data
+```
+
+### Avoiding Port Conflicts
+
+If you're running multiple Matomo instances or other services, you can easily change the ports in the `.env` file:
+- Change `MATOMO_PORT` if port 8081 is already in use
+- Change `DB_PORT` if port 3307 is already in use
 
 ## Setup Instructions
 
-1.  **Clone the Repository (or Create the File):**
-    * If this were a Git repository:
-        ```bash
-        git clone <repository-url>
-        cd <repository-name>
-        ```
-    * Alternatively, create a new directory for your project and save the `docker-compose.yml` content (provided in the previous step) into a file named `docker-compose.yml` within that directory.
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/bolstad/matomo-dev-dockercompose.git
+    cd matomo-dev-dockercompose
+    ```
 
-2.  **Create Local Data Directories:**
+2.  **Review and Update the .env file:**
+    Copy `.env-dist` to .env  `.env` and update according to your wishes:
+    * **IMPORTANT: Change the default passwords** for security:
+        * `MYSQL_ROOT_PASSWORD`
+        * `MYSQL_PASSWORD` and `MATOMO_DATABASE_PASSWORD` (must match)
+    * Adjust ports if needed to avoid conflicts:
+        * `MATOMO_PORT` (default: 8081)
+        * `DB_PORT` (default: 3307)
+    * Optionally customize container names and paths
+
+3.  **Create Local Data Directories:**
     In the same directory as your `docker-compose.yml` file, create the directories that will be used for persistent storage:
     ```bash
     mkdir matomo_data
@@ -37,33 +94,6 @@ Suitable for:
     * `./db_data`: Will store MariaDB's data.
 
     *Note on Permissions:* If you are on Linux, Docker might create these directories as `root` if they don't exist when you first run `docker-compose up`. You may need to adjust their ownership and permissions afterwards to allow your host user to write to `./matomo_data` (e.g., `sudo chown -R $(whoami):$(whoami) matomo_data db_data`).
-
-3.  **Configure Passwords:**
-    Open the `docker-compose.yml` file and **change the default passwords**.
-    * Under the `matomo` service `environment`:
-        * `MATOMO_DATABASE_PASSWORD`: Set a strong password.
-    * Under the `db` service `environment`:
-        * `MYSQL_ROOT_PASSWORD`: Set a very strong password for the database root user.
-        * `MYSQL_PASSWORD`: **Ensure this matches the `MATOMO_DATABASE_PASSWORD` you set above.**
-
-    **Example snippets from `docker-compose.yml` to modify:**
-    ```yaml
-    # ...
-    services:
-      matomo:
-        # ...
-        environment:
-          # ...
-          MATOMO_DATABASE_PASSWORD: your_matomo_db_password_here # <-- CHANGE THIS
-        # ...
-      db:
-        # ...
-        environment:
-          MYSQL_ROOT_PASSWORD: your_strong_root_password_here # <-- CHANGE THIS
-          # ...
-          MYSQL_PASSWORD: your_matomo_db_password_here # <-- CHANGE THIS (must match above)
-        # ...
-    ```
 
 ## Usage
 
@@ -76,22 +106,22 @@ Suitable for:
 
 2.  **Access Matomo:**
     Once the containers are running (you can check with `docker-compose ps`), open your web browser and navigate to:
-    `http://localhost:8080`
+    `http://localhost:8081` (or the port you configured in `.env`)
 
 3.  **Matomo Initial Setup:**
     You will be greeted by the Matomo installation wizard. Follow the on-screen instructions.
     * When prompted for **Database Setup**, use the following details:
         * **Database Server:** `db` (this is the service name defined in `docker-compose.yml`)
-        * **Login:** `matomo_user` (as defined in `docker-compose.yml`)
-        * **Password:** The password you set for `MATOMO_DATABASE_PASSWORD` and `MYSQL_PASSWORD`.
-        * **Database Name:** `matomo` (as defined in `docker-compose.yml`)
+        * **Login:** `matomo_user` (as configured in `.env`)
+        * **Password:** The password you set in `.env` for `MATOMO_DATABASE_PASSWORD` and `MYSQL_PASSWORD`.
+        * **Database Name:** `matomo` (as configured in `.env`)
         * **Table Prefix:** `matomo_` (or your preference)
         * **Adapter:** `PDO\MYSQL`
     * Complete the rest of the installation steps (Super User creation, etc.).
   
    OR 
 
-   * Import a copy of your stage data base for bliss (see 'Connect to Datbase from Host')     
+   * Import a copy of your stage database for testing (see 'Connect to Database from Host')     
 
 4.  **Developing Matomo (Writable Filesystem):**
     * The `./matomo_data` directory on your host machine is directly mapped to `/var/www/html` inside the Matomo container.
@@ -101,9 +131,9 @@ Suitable for:
 5.  **Connecting to the Database from Host:**
     You can connect to the MariaDB database using any compatible SQL client (e.g., DBeaver, MySQL Workbench, TablePlus, command line `mysql` client).
     * **Host:** `127.0.0.1` or `localhost`
-    * **Port:** `3306` (as mapped in `docker-compose.yml`)
+    * **Port:** The port configured in `.env` as `DB_PORT` (default: `3307`)
     * **Username:** `matomo_user` (for accessing the `matomo` database) or `root` (for full admin access to the DB server).
-    * **Password:** The password you set for `MYSQL_PASSWORD` (for `matomo_user`) or `MYSQL_ROOT_PASSWORD` (for `root`).
+    * **Password:** The password you set in `.env` for `MYSQL_PASSWORD` (for `matomo_user`) or `MYSQL_ROOT_PASSWORD` (for `root`).
     * **Database (optional, for `matomo_user`):** `matomo`
 
 6.  **Viewing Logs:**
@@ -133,21 +163,34 @@ Suitable for:
 
 ## Customization
 
-* **Ports:** To change the host port on which Matomo is accessible (e.g., from `8080` to `8000`), modify the `ports` section for the `matomo` service in `docker-compose.yml`:
-    ```yaml
-    services:
-      matomo:
-        ports:
-          - "8000:80" # Matomo now accessible on http://localhost:8000
+* **Ports:** To change the host ports, simply edit the `.env` file:
+    ```bash
+    MATOMO_PORT=8000  # Matomo now accessible on http://localhost:8000
+    DB_PORT=3308      # MariaDB now accessible on port 3308
     ```
-    Similarly, you can change the host port for MariaDB.
-* **Matomo Version:** Change the image tag for the `matomo` service (e.g., `matomo:5.0` for a specific version):
+    No need to modify `docker-compose.yml`!
+
+* **Passwords:** Update passwords in the `.env` file:
+    ```bash
+    MYSQL_ROOT_PASSWORD=your_secure_password
+    MYSQL_PASSWORD=your_secure_password
+    MATOMO_DATABASE_PASSWORD=your_secure_password  # Must match MYSQL_PASSWORD
+    ```
+
+* **Container Names:** Customize container names in `.env`:
+    ```bash
+    MATOMO_CONTAINER_NAME=my-matomo
+    DB_CONTAINER_NAME=my-matomo-db
+    ```
+
+* **Matomo Version:** To use a specific Matomo version, change the image tag in `docker-compose.yml`:
     ```yaml
     services:
       matomo:
         image: matomo:5.0 # Or any other available tag
     ```
     Find available tags on [Docker Hub for Matomo](https://hub.docker.com/_/matomo).
+
 * **PHP Configuration:** The official Matomo Docker image handles PHP configuration. For advanced custom PHP settings, you might need to create a custom Dockerfile that `FROM matomo:latest` and adds your own `.ini` files. Consult the [Matomo Docker image documentation](https://github.com/matomo-org/docker) for more details.
 
 ## Troubleshooting
@@ -159,7 +202,57 @@ Suitable for:
     * A better approach on Linux is often to ensure your host user's UID matches the `www-data` UID inside the container or to set the ownership of the host directory appropriately, e.g., `sudo chown -R 33:33 ./matomo_data` (if `www-data` is UID/GID 33). Check the Matomo Docker image documentation for specifics on the user.
 
 * **Port Conflicts:**
-    If you get an error about a port already being in use when running `docker-compose up`, it means another application on your host is using port `8080` or `3306`. You can either stop the other application or change the host-side port mapping in your `docker-compose.yml` as described in the 'Customization' section.
+    If you get an error about a port already being in use when running `docker-compose up`, it means another application on your host is using the configured port. You can either stop the other application or change the port in your `.env` file:
+    * Change `MATOMO_PORT` if the web port is in use (default: 8081)
+    * Change `DB_PORT` if the database port is in use (default: 3307)
+    
+    After changing the `.env` file, restart the containers:
+    ```bash
+    docker-compose down
+    docker-compose up -d
+    ```
+
+* **Multiple Matomo Instances:**
+    To run multiple independent Matomo development environments:
+    1. Clone the repository to different directories
+    2. In each directory, modify the `.env` file with unique:
+        * Port numbers (`MATOMO_PORT`, `DB_PORT`)
+        * Container names (`MATOMO_CONTAINER_NAME`, `DB_CONTAINER_NAME`)
+        * Network name (`NETWORK_NAME`)
+    3. Start each instance with `docker-compose up -d` in its respective directory
+
+## Changelog
+
+All notable changes to this project will be documented in this section.
+
+### [1.1.0] - 2024-08-31
+
+#### Added
+- Environment configuration via `.env` file for easy customization
+- `.env.example` template file with detailed explanation of all configurable values
+- Support for running multiple Matomo instances in parallel
+- Configurable container names via environment variables
+- Configurable network name to avoid Docker network conflicts
+- Documentation for avoiding port conflicts
+
+#### Changed
+- Default Matomo port from 8080 to 8081 to avoid common conflicts
+- Default MariaDB port from 3306 to 3307 to avoid common conflicts
+- All hardcoded configuration values moved to environment variables
+
+#### Fixed
+- Volume naming conflicts when running multiple instances
+- Port binding conflicts with existing services
+
+### [1.0.0] - 2024-06-01
+
+#### Initial Release
+- Docker Compose setup for Matomo development environment
+- Latest Matomo and MariaDB images
+- Bind-mounted volumes for live code editing
+- Exposed database port for direct access
+- Persistent data storage
+- Basic documentation
 
 ---
 

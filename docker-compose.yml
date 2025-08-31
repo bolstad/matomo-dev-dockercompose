@@ -1,21 +1,19 @@
 services:
   matomo:
     image: matomo:latest
+    container_name: ${MATOMO_CONTAINER_NAME}
     restart: always
     ports:
-      - "8080:80" # Exposes Matomo on host port 8080
+      - "${MATOMO_PORT}:80"
     volumes:
-      - ./matomo_data:/var/www/html # Mounts local ./matomo_data to Matomo's webroot
-      # You might also want to persist the config and plugins separately if preferred
-      # - ./config:/var/www/html/config
-      # - ./plugins:/var/www/html/plugins
+      - ${MATOMO_DATA_PATH}:/var/www/html
     environment:
-      MATOMO_DATABASE_HOST: db
-      MATOMO_DATABASE_ADAPTER: mysql
-      MATOMO_DATABASE_TABLES_PREFIX: matomo_
-      MATOMO_DATABASE_DBNAME: matomo
-      MATOMO_DATABASE_USERNAME: matomo_user
-      MATOMO_DATABASE_PASSWORD: your_strong_password # Change this!
+      MATOMO_DATABASE_HOST: ${MATOMO_DATABASE_HOST}
+      MATOMO_DATABASE_ADAPTER: ${MATOMO_DATABASE_ADAPTER}
+      MATOMO_DATABASE_TABLES_PREFIX: ${MATOMO_DATABASE_TABLES_PREFIX}
+      MATOMO_DATABASE_DBNAME: ${MATOMO_DATABASE_DBNAME}
+      MATOMO_DATABASE_USERNAME: ${MATOMO_DATABASE_USERNAME}
+      MATOMO_DATABASE_PASSWORD: ${MATOMO_DATABASE_PASSWORD}
     depends_on:
       - db
     networks:
@@ -23,23 +21,25 @@ services:
 
   db:
     image: mariadb:latest
+    container_name: ${DB_CONTAINER_NAME}
     restart: always
     ports:
-      - "3306:3306" # Exposes MariaDB on host port 3306
+      - "${DB_PORT}:3306"
     volumes:
-      - ./db_data:/var/lib/mysql # Mounts local ./db_data for persistent database storage
+      - ${DB_DATA_PATH}:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: your_very_strong_root_password # Change this!
-      MYSQL_DATABASE: matomo
-      MYSQL_USER: matomo_user
-      MYSQL_PASSWORD: your_strong_password # Ensure this matches MATOMO_DATABASE_PASSWORD
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     networks:
       - matomo_network
 
 volumes:
-  matomo_data: # Defines the named volume for Matomo if you don't use a bind mount like ./matomo_data
-  db_data:     # Defines the named volume for the database if you don't use a bind mount like ./db_data
+  matomo_data:
+  db_data:
 
 networks:
   matomo_network:
+    name: ${NETWORK_NAME}
     driver: bridge
