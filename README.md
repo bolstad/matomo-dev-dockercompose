@@ -20,6 +20,7 @@ Suitable for:
 * **Persistent data:** Both Matomo files (if using the bind mount for /var/www/html) and database data (in ./db_data) are persisted on your host machine.
 * **Configuration via .env file:** All settings (ports, passwords, container names) are externalized to a `.env` file for easy customization without modifying docker-compose.yml. This makes it easy to run several development instances in parallel without port conflicts. 
 * **No conflicts:** Default configuration uses non-standard ports (8081 for web, 3307 for database) to avoid conflicts with other local services.
+* **Makefile for common tasks:** Start/stop/tail logs/start shell/start Mysql cli via `make` commands 
 
 ## Environment Configuration (.env file)
 
