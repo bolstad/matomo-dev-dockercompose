@@ -280,12 +280,17 @@ All notable changes to this project will be documented in this section.
 ### [1.1.1] - 2024-08-31
 
 #### Fixed
+- Actually add .env.example. (Do not create releases after a long day of coding ...)
+
+### [1.1.1] - 2024-08-31
+
+#### Fixed
 - Post-commit clarity: renamed `.env-example` to `.env.example`, fixed typos
 - Removed unnecessary named volume definitions from docker-compose.yml that conflicted with bind mounts
 - Updated directory creation instructions to reflect automatic creation
 
 #### Changed
-- Simplified data directory setup - directories are now created automatically by Docker
+- Simplified data directory setup -  note that directories are now created automatically by Docker
 
 ### [1.1.0] - 2024-08-31
 
