@@ -92,17 +92,72 @@ If you're running multiple Matomo instances or other services, you can easily ch
 
     *Note on Permissions:* If you are on Linux, Docker might create these directories as `root`. You may need to adjust their ownership and permissions afterwards to allow your host user to write to `./matomo_data` (e.g., `sudo chown -R $(whoami):$(whoami) matomo_data db_data`).
 
+## Makefile Commands
+
+This project includes a Makefile that provides convenient shortcuts for common Docker Compose operations. All commands read configuration from the `.env` file automatically.
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `make help` | Display all available commands |
+| `make up` | Start the Docker containers in detached mode |
+| `make down` | Stop and remove the Docker containers |
+| `make restart` | Stop and restart all containers |
+| `make status` | Show the current status of all containers |
+| `make shell` | Open a bash shell inside the Matomo container |
+| `make db` | Connect to MariaDB as the application user |
+| `make db-root` | Connect to MariaDB as root user |
+| `make logs` | Follow logs from all containers |
+| `make logs-matomo` | Follow logs from the Matomo container only |
+| `make logs-db` | Follow logs from the database container only |
+| `make clean` | Stop containers and remove data directories (destructive) |
+
+### Command Examples
+
+```bash
+# Start the development environment
+make up
+
+# Check container status
+make status
+
+# Access the Matomo container shell for debugging
+make shell
+
+# Connect to the database
+make db
+
+# View Matomo logs
+make logs-matomo
+
+# Restart everything
+make restart
+```
+
+### Database Access
+
+The `make db` command connects to the MariaDB database using the credentials defined in your `.env` file. It automatically selects the Matomo database and authenticates as the application user. For administrative tasks, use `make db-root` to connect with root privileges.
+
+### Container Shell Access
+
+The `make shell` command provides direct access to the Matomo container's filesystem at `/var/www/html`. This is useful for:
+- Running Matomo console commands
+- Checking file permissions
+- Debugging PHP configuration
+- Clearing cache manually
+
 ## Usage
 
 1.  **Start the Environment:**
     Navigate to the directory containing your `docker-compose.yml` file in a terminal and run:
     ```bash
-    docker-compose up -d
+    make up
     ```
-    This command will download the necessary Docker images (if not already present) and start the Matomo and MariaDB containers in detached mode (`-d`).
+    This command will download the necessary Docker images (if not already present) and start the Matomo and MariaDB containers in detached mode.
 
 2.  **Access Matomo:**
-    Once the containers are running (you can check with `docker-compose ps`), open your web browser and navigate to:
+    Once the containers are running (you can check with `make status`), open your web browser and navigate to:
     `http://localhost:8081` (or the port you configured in `.env`)
 
 3.  **Matomo Initial Setup:**
@@ -136,18 +191,18 @@ If you're running multiple Matomo instances or other services, you can easily ch
 6.  **Viewing Logs:**
     To view the logs from the running services:
     ```bash
-    docker-compose logs -f
+    make logs
     ```
-    To view logs for a specific service (e.g., matomo):
+    To view logs for a specific service:
     ```bash
-    docker-compose logs -f matomo
-    docker-compose logs -f db
+    make logs-matomo
+    make logs-db
     ```
 
 7.  **Stopping the Environment:**
     To stop the Matomo and MariaDB containers:
     ```bash
-    docker-compose down
+    make down
     ```
     Your data in `./matomo_data` and `./db_data` will remain intact.
 
