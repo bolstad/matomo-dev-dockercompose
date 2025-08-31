@@ -81,7 +81,7 @@ If you're running multiple Matomo instances or other services, you can easily ch
     * Optionally customize container names and paths
 
 3.  **Data Directories:**
-    The data directories (`matomo_data` and `db_data`) will be created automatically when you first run `docker-compose up`.
+    The data directories (`matomo_data` and `db_data`) will be created automatically when you first run `make up`.
     * `./matomo_data`: Will store Matomo's application files.
     * `./db_data`: Will store MariaDB's data.
 
@@ -248,14 +248,13 @@ The `make shell` command provides direct access to the Matomo container's filesy
     * A better approach on Linux is often to ensure your host user's UID matches the `www-data` UID inside the container or to set the ownership of the host directory appropriately, e.g., `sudo chown -R 33:33 ./matomo_data` (if `www-data` is UID/GID 33). Check the Matomo Docker image documentation for specifics on the user.
 
 * **Port Conflicts:**
-    If you get an error about a port already being in use when running `docker-compose up`, it means another application on your host is using the configured port. You can either stop the other application or change the port in your `.env` file:
+    If you get an error about a port already being in use when running `make up`, it means another application on your host is using the configured port. You can either stop the other application or change the port in your `.env` file:
     * Change `MATOMO_PORT` if the web port is in use (default: 8081)
     * Change `DB_PORT` if the database port is in use (default: 3307)
     
     After changing the `.env` file, restart the containers:
     ```bash
-    docker-compose down
-    docker-compose up -d
+    make restart
     ```
 
 * **Multiple Matomo Instances:**
@@ -265,7 +264,7 @@ The `make shell` command provides direct access to the Matomo container's filesy
         * Port numbers (`MATOMO_PORT`, `DB_PORT`)
         * Container names (`MATOMO_CONTAINER_NAME`, `DB_CONTAINER_NAME`)
         * Network name (`NETWORK_NAME`)
-    3. Start each instance with `docker-compose up -d` in its respective directory
+    3. Start each instance with `make up` in its respective directory
 
 ## Changelog
 
