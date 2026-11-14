@@ -13,6 +13,9 @@ else
     $(warning Warning: $(ENV) file not found!)
 endif
 
+# -t only when we actually have a terminal (so targets also work from scripts)
+TTY := $(shell [ -t 0 ] && echo -it || echo -i)
+
 COMPOSE = docker compose --env-file $(ENV) -p $(MATOMO_CONTAINER_NAME)
 
 # Check for .env file and create from example if missing
@@ -43,6 +46,9 @@ help:
 	@echo "  make shell        - Open a bash shell in the Matomo container"
 	@echo "  make db           - Connect to MariaDB database as matomo_user"
 	@echo "  make db-root      - Connect to MariaDB database as root"
+	@echo "  make console ARGS=\"...\" - Run a Matomo console command, e.g. ARGS=\"plugin:list\""
+	@echo "  make dev-mode     - Enable Matomo development mode"
+	@echo "  make archive      - Run core:archive once"
 	@echo "  make up           - Start the Docker containers"
 	@echo "  make down         - Stop the Docker containers"
 	@echo "  make restart      - Restart the Docker containers"
@@ -82,6 +88,20 @@ init:
 shell: check-env
 	@echo "Opening shell in Matomo container '$(MATOMO_CONTAINER_NAME)' ..."
 	@docker exec -it $(MATOMO_CONTAINER_NAME) /bin/bash
+
+# Run a Matomo console command as www-data
+.PHONY: console
+console: check-env
+	@docker exec $(TTY) -u www-data $(MATOMO_CONTAINER_NAME) php /var/www/html/console $(ARGS)
+
+# Development mode (disables caching of assets/templates, enables generate:* commands)
+.PHONY: dev-mode
+dev-mode: check-env
+	@$(MAKE) --no-print-directory console ARGS="development:enable"
+
+.PHONY: archive
+archive: check-env
+	@$(MAKE) --no-print-directory console ARGS="core:archive --force-all-websites"
 
 # Connect to database as matomo_user
 .PHONY: db
