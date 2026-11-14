@@ -90,7 +90,7 @@ db-root: check-env
 # Start containers
 .PHONY: up
 up: check-env
-	docker compose up -d
+	docker compose up -d --build
 
 # Stop containers
 .PHONY: down

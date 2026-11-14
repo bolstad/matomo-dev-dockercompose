@@ -1,6 +1,11 @@
 services:
   matomo:
-    image: matomo:latest
+    build:
+      context: ./docker
+      args:
+        BASE_IMAGE: matomo:${MATOMO_BASE_TAG:-5-apache}
+        MATOMO_VERSION: ${MATOMO_VERSION:-}
+    image: matomo-dev:${MATOMO_VERSION:-stable}
     container_name: ${MATOMO_CONTAINER_NAME}
     restart: unless-stopped
     ports:
@@ -20,7 +25,7 @@ services:
       - matomo_network
 
   db:
-    image: mariadb:latest
+    image: mariadb:${MARIADB_VERSION:-lts}
     container_name: ${DB_CONTAINER_NAME}
     restart: unless-stopped
     ports:
