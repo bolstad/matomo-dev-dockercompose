@@ -90,12 +90,12 @@ db-root: check-env
 # Start containers
 .PHONY: up
 up: check-env
-	docker-compose up -d
+	docker compose up -d
 
 # Stop containers
 .PHONY: down
 down: check-env
-	docker-compose down
+	docker compose down
 
 # Restart containers
 .PHONY: restart
@@ -104,22 +104,22 @@ restart: down up
 # Show logs
 .PHONY: logs
 logs: check-env
-	docker-compose logs -f
+	docker compose logs -f
 
 # Show Matomo logs
 .PHONY: logs-matomo
 logs-matomo: check-env
-	docker-compose logs -f matomo
+	docker compose logs -f matomo
 
 # Show database logs
 .PHONY: logs-db
 logs-db: check-env
-	docker-compose logs -f db
+	docker compose logs -f db
 
 # Show container status
 .PHONY: status
 status: check-env
-	@docker-compose ps
+	@docker compose ps
 
 # Clean up (stop containers and remove data) - USE WITH CAUTION
 .PHONY: clean
@@ -127,5 +127,5 @@ clean:
 	@echo "WARNING: This will stop containers and remove all data!"
 	@echo "Press Ctrl+C to cancel, or Enter to continue..."
 	@read confirm
-	docker-compose down
+	docker compose down
 	rm -rf matomo_data db_data

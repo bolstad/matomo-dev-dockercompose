@@ -2,7 +2,7 @@ services:
   matomo:
     image: matomo:latest
     container_name: ${MATOMO_CONTAINER_NAME}
-    restart: always
+    restart: unless-stopped
     ports:
       - "${MATOMO_PORT}:80"
     volumes:
@@ -22,7 +22,7 @@ services:
   db:
     image: mariadb:latest
     container_name: ${DB_CONTAINER_NAME}
-    restart: always
+    restart: unless-stopped
     ports:
       - "${DB_PORT}:3306"
     volumes:
