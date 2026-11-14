@@ -1,0 +1,14 @@
+# Mount plugins from their own repos instead of editing them inside matomo_data.
+#
+#   cp docker-compose.override.example.yml docker-compose.override.yml
+#
+# Compose picks up docker-compose.override.yml automatically, for every
+# instance (ENV=...), so the same plugin checkout is tested against 5.x and 6.x.
+# The directory name inside plugins/ must match the plugin name exactly.
+# Activate after first start:  make console ARGS="plugin:activate MyPlugin"
+
+services:
+  matomo:
+    volumes:
+      - ../my-plugin-repo:/var/www/html/plugins/MyPlugin
+      # - ${HOME}/code/AnotherPlugin:/var/www/html/plugins/AnotherPlugin

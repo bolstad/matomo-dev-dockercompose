@@ -6,3 +6,4 @@ matomo_data/
 !.env.*.example
 matomo6_data/
 db6_data/
+docker-compose.override.yml
