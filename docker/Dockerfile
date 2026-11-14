@@ -32,3 +32,22 @@ RUN set -eux; \
 	rm matomo.tar.gz; \
 	apt-get purge -y --auto-remove gnupg dirmngr; \
 	rm -rf /var/lib/apt/lists/*
+
+# Optional Xdebug (INSTALL_XDEBUG=1 in .env). Trigger-based, so it only kicks in
+# when the request carries XDEBUG_TRIGGER (browser extension / cookie / CLI env).
+ARG INSTALL_XDEBUG=0
+
+RUN set -eux; \
+	if [ "$INSTALL_XDEBUG" != "1" ]; then exit 0; fi; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends $PHPIZE_DEPS; \
+	pecl install xdebug; \
+	docker-php-ext-enable xdebug; \
+	{ \
+		echo 'xdebug.mode=debug'; \
+		echo 'xdebug.start_with_request=trigger'; \
+		echo 'xdebug.client_host=host.docker.internal'; \
+		echo 'xdebug.client_port=9003'; \
+	} > /usr/local/etc/php/conf.d/zz-xdebug.ini; \
+	apt-get purge -y --auto-remove $PHPIZE_DEPS; \
+	rm -rf /tmp/pear /var/lib/apt/lists/*

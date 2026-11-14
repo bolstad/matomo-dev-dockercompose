@@ -5,7 +5,10 @@ services:
       args:
         BASE_IMAGE: matomo:${MATOMO_BASE_TAG:-5-apache}
         MATOMO_VERSION: ${MATOMO_VERSION:-}
-    image: matomo-dev:${MATOMO_VERSION:-stable}
+        INSTALL_XDEBUG: ${INSTALL_XDEBUG:-0}
+    image: matomo-dev:${MATOMO_VERSION:-stable}-xdebug${INSTALL_XDEBUG:-0}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     container_name: ${MATOMO_CONTAINER_NAME}
     restart: unless-stopped
     ports:
