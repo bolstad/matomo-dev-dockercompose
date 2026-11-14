@@ -21,6 +21,10 @@ Suitable for:
 * **Configuration via .env file:** All settings (ports, passwords, container names) are externalized to a `.env` file for easy customization without modifying docker-compose.yml. This makes it easy to run several development instances in parallel without port conflicts. 
 * **No conflicts:** Default configuration uses non-standard ports (8081 for web, 3307 for database) to avoid conflicts with other local services.
 * **Makefile for common tasks:** Start/stop/tail logs/start shell/start Mysql cli via `make` commands 
+* **Any Matomo version, including RCs:** Set `MATOMO_VERSION` in `.env` (e.g. `5.14.2` or `6.0.0-rc1`). The tarball is GPG-verified at build time.
+* **Several versions side by side:** One env file per instance, e.g. 5.x on `.env` and 6.x on `.env.m6` - perfect for checking plugin compatibility before upgrading.
+* **Plugins from their own repos:** Mount plugin checkouts into `plugins/` via `docker-compose.override.yml`.
+* **Optional Xdebug** (trigger mode).
 
 ## Environment Configuration (.env file)
 
@@ -107,6 +111,11 @@ This project includes a Makefile that provides convenient shortcuts for common D
 | `make logs-matomo` | Follow logs from the Matomo container only |
 | `make logs-db` | Follow logs from the database container only |
 | `make clean` | Stop containers and remove data directories (destructive) |
+| `make console ARGS="..."` | Run a Matomo console command as `www-data`, e.g. `ARGS="plugin:list"` |
+| `make dev-mode` | Enable Matomo development mode |
+| `make archive` | Run `core:archive` once for all websites |
+
+Every command takes `ENV=<file>` to target another instance, e.g. `make up ENV=.env.m6`.
 
 ### Command Examples
 
@@ -175,7 +184,22 @@ The `make shell` command provides direct access to the Matomo container's filesy
     * You can now open the `./matomo_data` directory in your favorite code editor or IDE on your host system.
     * Any changes you make to files (e.g., in the `plugins` or `themes` directory within `./matomo_data`) will be immediately reflected in the running Matomo instance. You might need to clear Matomo's cache or refresh your browser to see some changes.
 
-5.  **Connecting to the Database from Host:**
+5.  **Plugin Development:**
+    Rather than editing plugins inside `./matomo_data`, keep each plugin in its own repo and mount it:
+    ```bash
+    cp docker-compose.override.example.yml docker-compose.override.yml
+    # edit the paths, then
+    make up
+    make console ARGS="plugin:activate MyPlugin"
+    make dev-mode
+    ```
+    The override applies to every instance, so the same checkout runs on 5.x and 6.x at the same time. Useful commands:
+    * `make console ARGS="plugin:list"`
+    * `make console ARGS="generate:plugin"` (needs dev mode)
+    * `make archive` to run the archiver and catch errors in your reports
+    * `make logs-matomo` for PHP errors
+
+6.  **Connecting to the Database from Host:**
     You can connect to the MariaDB database using any compatible SQL client (e.g., DBeaver, MySQL Workbench, TablePlus, command line `mysql` client).
     * **Host:** `127.0.0.1` or `localhost`
     * **Port:** The port configured in `.env` as `DB_PORT` (default: `3307`)
@@ -183,7 +207,7 @@ The `make shell` command provides direct access to the Matomo container's filesy
     * **Password:** The password you set in `.env` for `MYSQL_PASSWORD` (for `matomo_user`) or `MYSQL_ROOT_PASSWORD` (for `root`).
     * **Database (optional, for `matomo_user`):** `matomo`
 
-6.  **Viewing Logs:**
+7.  **Viewing Logs:**
     To view the logs from the running services:
     ```bash
     make logs
@@ -194,19 +218,19 @@ The `make shell` command provides direct access to the Matomo container's filesy
     make logs-db
     ```
 
-7.  **Stopping the Environment:**
+8.  **Stopping the Environment:**
     To stop the Matomo and MariaDB containers:
     ```bash
     make down
     ```
     Your data in `./matomo_data` and `./db_data` will remain intact.
 
-8.  **Removing the Environment and Data (Use with Caution!):**
+9.  **Removing the Environment and Data (Use with Caution!):**
     If you want to stop the containers AND remove all associated volumes (including your Matomo files in `./matomo_data` if it were a Docker named volume, and your database data in `./db_data` if it were a Docker named volume), use:
     ```bash
-    docker-compose down -v
+    docker compose down -v
     ```
-    **Note:** Since we are using bind mounts (`./matomo_data` and `./db_data`), `docker-compose down -v` will remove the anonymous volumes but not the data in these host-bound directories. To delete that data, you need to manually delete the `./matomo_data` and `./db_data` directories from your host.
+    **Note:** Since we are using bind mounts (`./matomo_data` and `./db_data`), `docker compose down -v` will remove the anonymous volumes but not the data in these host-bound directories. To delete that data, you need to manually delete the `./matomo_data` and `./db_data` directories from your host.
 
 ## Customization
 
@@ -229,13 +253,18 @@ The `make shell` command provides direct access to the Matomo container's filesy
     DB_CONTAINER_NAME=my-matomo-db
     ```
 
-* **Matomo Version:** To use a specific Matomo version, change the image tag in `docker-compose.yml`:
-    ```yaml
-    services:
-      matomo:
-        image: matomo:5.0 # Or any other available tag
+* **Matomo Version:** Set `MATOMO_VERSION` in `.env`:
+    ```bash
+    MATOMO_VERSION=5.14.2      # any release
+    MATOMO_VERSION=6.0.0-rc1   # pre-releases work too
+    MATOMO_VERSION=            # empty = latest stable in the official image
     ```
-    Find available tags on [Docker Hub for Matomo](https://hub.docker.com/_/matomo).
+    `make up` builds a small image on top of the official one (`docker/Dockerfile`) and swaps in that release, downloaded from builds.matomo.org and GPG-verified.
+    **Note:** Matomo is copied into `MATOMO_DATA_PATH` on first start only. Changing the version afterwards does *not* upgrade an existing instance. Use a new data dir (or a separate instance, see below), or upgrade through Matomo itself.
+
+* **MariaDB Version:** `MARIADB_VERSION` (default `lts`).
+
+* **Xdebug:** Set `INSTALL_XDEBUG=1` and run `make up`. Xdebug runs in trigger mode on port 9003 and connects back to `host.docker.internal`, so use a browser extension or `XDEBUG_TRIGGER` to start a session.
 
 * **PHP Configuration:** The official Matomo Docker image handles PHP configuration. For advanced custom PHP settings, you might need to create a custom Dockerfile that `FROM matomo:latest` and adds your own `.ini` files. Consult the [Matomo Docker image documentation](https://github.com/matomo-org/docker) for more details.
 
@@ -258,17 +287,33 @@ The `make shell` command provides direct access to the Matomo container's filesy
     ```
 
 * **Multiple Matomo Instances:**
-    To run multiple independent Matomo development environments:
-    1. Clone the repository to different directories
-    2. In each directory, modify the `.env` file with unique:
-        * Port numbers (`MATOMO_PORT`, `DB_PORT`)
-        * Container names (`MATOMO_CONTAINER_NAME`, `DB_CONTAINER_NAME`)
-        * Network name (`NETWORK_NAME`)
-    3. Start each instance with `make up` in its respective directory
+    Keep one env file per instance in the same checkout. Each one needs its own ports, container names, network name and data paths. `.env.m6.example` is a ready-made Matomo 6 instance:
+    ```bash
+    cp .env.m6.example .env.m6      # edit passwords
+    make up ENV=.env.m6             # http://localhost:8086
+    make up                         # the default instance keeps running on 8081
+    ```
+    The compose project name is taken from `MATOMO_CONTAINER_NAME`, so `make down ENV=.env.m6` only touches that instance.
 
 ## Changelog
 
 All notable changes to this project will be documented in this section.
+
+
+### [2.1.0] - 2026-11-14
+
+#### Added
+- `MATOMO_VERSION`: run any Matomo release, including RCs (e.g. 6.0.0-rc1), via a thin image built on top of the official one. GPG-verified download.
+- `MARIADB_VERSION` (default `lts`) instead of `latest`
+- `ENV=<file>` for all make targets, so several instances can run side by side from one checkout, plus `.env.m6.example`
+- `make console`, `make dev-mode`, `make archive`
+- `docker-compose.override.example.yml` for mounting plugins from their own repos
+- Optional Xdebug (`INSTALL_XDEBUG=1`)
+
+#### Changed
+- Uses `docker compose` (v2) instead of `docker-compose`
+- `restart: unless-stopped` instead of `always`
+- `make clean` removes the data paths from the env file instead of hardcoded dirs
 
 
 ### [2.0.0] - 2025-08-31

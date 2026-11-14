@@ -1,19 +1,28 @@
 # Makefile for Matomo Development Environment
 # Author: Christian Bolstad
 
-# Check if .env file exists
-ifneq (,$(wildcard ./.env))
-    include .env
+# Which env file to use. Default .env, but you can keep one per instance,
+# e.g. `make up ENV=.env.m6` for a Matomo 6 instance next to the 5.x one.
+ENV ?= .env
+
+# Check if the env file exists
+ifneq (,$(wildcard ./$(ENV)))
+    include $(ENV)
     export
 else
-    $(warning Warning: .env file not found!)
+    $(warning Warning: $(ENV) file not found!)
 endif
+
+# -t only when we actually have a terminal (so targets also work from scripts)
+TTY := $(shell [ -t 0 ] && echo -it || echo -i)
+
+COMPOSE = docker compose --env-file $(ENV) -p $(MATOMO_CONTAINER_NAME)
 
 # Check for .env file and create from example if missing
 .PHONY: check-env
 check-env:
-	@if [ ! -f .env ]; then \
-		echo "Error: .env file not found!"; \
+	@if [ ! -f $(ENV) ]; then \
+		echo "Error: $(ENV) file not found!"; \
 		echo ""; \
 		if [ -f .env.example ]; then \
 			echo "To create one, run:"; \
@@ -37,6 +46,9 @@ help:
 	@echo "  make shell        - Open a bash shell in the Matomo container"
 	@echo "  make db           - Connect to MariaDB database as matomo_user"
 	@echo "  make db-root      - Connect to MariaDB database as root"
+	@echo "  make console ARGS=\"...\" - Run a Matomo console command, e.g. ARGS=\"plugin:list\""
+	@echo "  make dev-mode     - Enable Matomo development mode"
+	@echo "  make archive      - Run core:archive once"
 	@echo "  make up           - Start the Docker containers"
 	@echo "  make down         - Stop the Docker containers"
 	@echo "  make restart      - Restart the Docker containers"
@@ -45,6 +57,8 @@ help:
 	@echo "  make logs-db      - Show logs from database container"
 	@echo "  make status       - Show status of containers"
 	@echo "  make clean        - Stop containers and remove data directories"
+	@echo ""
+	@echo "  Add ENV=<file> to any command to use another env file (default .env)"
 	@echo ""
 
 # Initialize environment
@@ -75,6 +89,20 @@ shell: check-env
 	@echo "Opening shell in Matomo container '$(MATOMO_CONTAINER_NAME)' ..."
 	@docker exec -it $(MATOMO_CONTAINER_NAME) /bin/bash
 
+# Run a Matomo console command as www-data
+.PHONY: console
+console: check-env
+	@docker exec $(TTY) -u www-data $(MATOMO_CONTAINER_NAME) php /var/www/html/console $(ARGS)
+
+# Development mode (disables caching of assets/templates, enables generate:* commands)
+.PHONY: dev-mode
+dev-mode: check-env
+	@$(MAKE) --no-print-directory console ARGS="development:enable"
+
+.PHONY: archive
+archive: check-env
+	@$(MAKE) --no-print-directory console ARGS="core:archive --force-all-websites"
+
 # Connect to database as matomo_user
 .PHONY: db
 db: check-env
@@ -90,12 +118,12 @@ db-root: check-env
 # Start containers
 .PHONY: up
 up: check-env
-	docker-compose up -d
+	$(COMPOSE) up -d --build
 
 # Stop containers
 .PHONY: down
 down: check-env
-	docker-compose down
+	$(COMPOSE) down
 
 # Restart containers
 .PHONY: restart
@@ -104,22 +132,22 @@ restart: down up
 # Show logs
 .PHONY: logs
 logs: check-env
-	docker-compose logs -f
+	$(COMPOSE) logs -f
 
 # Show Matomo logs
 .PHONY: logs-matomo
 logs-matomo: check-env
-	docker-compose logs -f matomo
+	$(COMPOSE) logs -f matomo
 
 # Show database logs
 .PHONY: logs-db
 logs-db: check-env
-	docker-compose logs -f db
+	$(COMPOSE) logs -f db
 
 # Show container status
 .PHONY: status
 status: check-env
-	@docker-compose ps
+	@$(COMPOSE) ps
 
 # Clean up (stop containers and remove data) - USE WITH CAUTION
 .PHONY: clean
@@ -127,5 +155,5 @@ clean:
 	@echo "WARNING: This will stop containers and remove all data!"
 	@echo "Press Ctrl+C to cancel, or Enter to continue..."
 	@read confirm
-	docker-compose down
-	rm -rf matomo_data db_data
+	$(COMPOSE) down
+	rm -rf $(MATOMO_DATA_PATH) $(DB_DATA_PATH)
